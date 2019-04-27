@@ -1,4 +1,7 @@
+require json
+
 class Hangman
+
     @@min_length = 5
     @@max_length = 12
     @@wordlist_file = 'wordlist.txt'
@@ -25,39 +28,64 @@ class Hangman
     end
 
     def new_game
-        @secret_word = @wordlist[rand(@wordlist.length)]
+        @secret_word = @wordlist[rand(@wordlist.length)].downcase
         puts @secret_word
 
-        remaining_guesses_string = "o" * @@guess_limit
+        guess_count = 0
+        correct_letters = 0
+        remaining_guesses = "o" * @@guess_limit
         guessed_letters = "" * @@guess_limit
         guess_string = "_" * @secret_word.length
 
-        # print underscores representing each character
-        puts guess_string
-        # print guesses
-        puts guess_string
-        # print remaining number of guesses
-        puts remaining_guesses
+        print_status(guess_string, guessed_letters, remaining_guesses)
 
-        # get guess from user
-        guess_char = gets.chomp.downcase
-        # check if valid
-            # single character
-            # not already guessed
-            # exists in alphabet
+        winner = nil
 
-        if guessed_letters.include? guess_char
-            puts "already guessed"
+        begin
+            # get guess from user
+            print "Guess a letter, or enter 'save' to save the game: "
+            guess_char = gets.chomp.downcase
+
+            if guessed_letters.include? guess_char
+                puts "already guessed"
+            elsif @secret_word.include? guess_char
+                @secret_word.split("").each_with_index do |secret_char, index|
+                    if guess_char == secret_char
+                        guess_string[index] = guess_char
+                        correct_letters += 1
+                    end
+                end
+                guessed_letters += guess_char
+            else
+                remaining_guesses[guess_count] = 'x'
+                guessed_letters += guess_char
+                guess_count += 1
+            end
+            print_status(guess_string, guessed_letters, remaining_guesses)
+            puts
+            winner = winner(guess_string, guess_count)
+        end until winner
+        puts winner + " wins!"
+
+    end
+
+    def winner(guess_string, guess_count)
+        if !(guess_string.include? '_')
+            return 'guesser'
+        elsif guess_count == @@guess_limit
+            return 'computer'
+        else
+            return nil
         end
+    end
 
-        
-        # check if in the word
-            # if in word
-
-            # if not in word
-                # increment guesses
-
-
+    def print_status(guess_string, guessed_letters, remaining_guesses)
+        # print underscores representing each character
+        puts "word: " + guess_string
+        # print guesses
+        puts "guessed letters: " + guessed_letters
+        # print remaining number of guesses
+        puts "remaining guesses: " + remaining_guesses
     end
 
     def load_game
@@ -65,13 +93,20 @@ class Hangman
     end
 
     def save_game
-
+        
     end
 
-    def play_round
-
+    def to_json(guess_string, guessed_letters, remaining_guesses, guess_count)
+        JSON.dump ({
+            :secret_word => @secret_word,
+            :guess_string => guess_string,
+            :guessed_letters => guessed_letters,
+            :remaining_guesses => remaining_guesses,
+            :guess_count => guess_count
+        })
     end
 
 end
 
 game = Hangman.new()
+game.new_game()
